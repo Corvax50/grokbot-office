@@ -4,9 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { BOT_IDS } from "../js/bots.js";
 import { loadOfficeData } from "../js/data.js";
-import { buildModel, isAsleep, STORED_STATES } from "../js/model.js";
+import { buildModel, isAsleep, isRecentHandoff, publicTextIssues, STORED_STATES } from "../js/model.js";
 import { cityHall } from "../js/room.js";
 import { assignTiles, nearestApproach } from "../js/walk.js";
+import { mergeHandoffFiles } from "./merge-handoffs.mjs";
 import { mergeBotRecords } from "./merge-status.mjs";
 import { validateSchema } from "./schema.mjs";
 
@@ -45,6 +46,7 @@ if (model.byId.dex.asleep) fail("dex should still be awake in the example");
 if (!model.approvals.includes("code")) fail("code should be in approvals");
 if (model.byId.pixel.place !== "lounge") fail("pixel should be in the lounge");
 if (model.byId.greed.pose !== "blocked") fail("greed should be blocked");
+if (model.handoffs.length !== 2) fail("sample handoffs should still be inside 24 hours");
 
 if (isAsleep(Date.parse("2026-10-27T00:00:00Z"), Date.parse("2026-10-30T00:00:00Z")) !== true) {
   fail("exactly 72 hours should count as asleep");
@@ -52,6 +54,80 @@ if (isAsleep(Date.parse("2026-10-27T00:00:00Z"), Date.parse("2026-10-30T00:00:00
 if (isAsleep(Date.parse("2026-10-27T00:00:01Z"), Date.parse("2026-10-30T00:00:00Z")) !== false) {
   fail("just under 72 hours should stay awake");
 }
+
+const day = Date.parse("2026-10-30T20:44:00Z");
+if (isRecentHandoff(day - 24 * 60 * 60 * 1000, day) !== true) fail("a handoff exactly 24 hours old should show");
+if (isRecentHandoff(day - 24 * 60 * 60 * 1000 - 1, day) !== false) fail("a handoff older than 24 hours should hide");
+if (isRecentHandoff(day + 1000, day) !== false) fail("a future handoff should hide");
+
+const aged = buildModel(
+  { bots: [] },
+  {
+    handoffs: [
+      { from: "pixel", to: "code", label: "Icon sheet", createdAt: "2026-10-29T20:44:00Z" },
+      { from: "atlas", to: "dex", label: "Shelf list", createdAt: "2026-10-29T20:43:59Z" },
+    ],
+  },
+  BOT_IDS,
+  day,
+);
+if (aged.handoffs.map((hand) => hand.from).join(",") !== "pixel") {
+  fail("only the handoff inside 24 hours should remain");
+}
+
+const staleWait = buildModel(
+  {
+    bots: [
+      {
+        id: "code",
+        state: "waiting",
+        task: "Ready to send the patch",
+        updatedAt: "2026-10-26T11:00:00Z",
+        reason: "Needs a yes before the next step",
+      },
+    ],
+  },
+  { handoffs: [] },
+  BOT_IDS,
+  day,
+);
+if (!staleWait.approvals.includes("code") || !staleWait.byId.code.asleep) {
+  fail("a waiting bot stays on Approvals after 3 days and is marked asleep");
+}
+
+if (publicTextIssues("Sorting today's assignments").length !== 0) fail("a generic task should pass");
+if (!publicTextIssues("File the $12 note").includes("currency")) fail("a currency amount should be flagged");
+if (!publicTextIssues("Paid 12 USD").includes("currency")) fail("a currency code should be flagged");
+if (!publicTextIssues("Write ada@example.com").includes("email")) fail("an email should be flagged");
+if (!publicTextIssues(`${"a".repeat(81)}`).includes("long text")) fail("long free text should be flagged");
+if (!publicTextIssues("line one\nline two", 40).includes("long text")) fail("a line break should be flagged");
+
+const leaked = buildModel(
+  {
+    bots: [
+      {
+        id: "greed",
+        state: "working",
+        task: "File the $12 note",
+        updatedAt: "2026-10-30T18:00:00Z",
+      },
+    ],
+  },
+  { handoffs: [] },
+  BOT_IDS,
+  day,
+);
+if (leaked.byId.greed.task !== "Not shown") fail("currency should not be shown on the floor");
+if (!leaked.problems.some((item) => item.message.includes("currency"))) fail("currency should be reported");
+
+function scanPublic(value, where, max) {
+  for (const issue of publicTextIssues(value, max)) fail(`${where} looks unsafe to publish (${issue})`);
+}
+for (const bot of status.bots) {
+  scanPublic(bot.task, `${bot.id} task`, 80);
+  if (bot.reason) scanPublic(bot.reason, `${bot.id} reason`, 80);
+}
+for (const hand of handoffs.handoffs) scanPublic(hand.label, `${hand.from} handoff`, 40);
 
 const badStatus = buildModel(
   { bots: [{ id: "nope", state: "flying" }, { id: "dex", state: "flying" }] },
@@ -77,6 +153,20 @@ const merged = mergeBotRecords([
   { id: "dex", state: "working", task: "Routing", updatedAt: "2026-10-30T12:00:00Z" },
 ]);
 if (merged.bots.map((bot) => bot.id).join(",") !== "box,dex") fail("merge should sort by id");
+
+const mergedHands = mergeHandoffFiles([
+  {
+    name: "pixel.json",
+    data: { handoffs: [{ to: "code", label: "Icon sheet", createdAt: "2026-10-30T19:10:00Z" }] },
+  },
+  {
+    name: "atlas.json",
+    data: { handoffs: [{ to: "dex", label: "Shelf list", createdAt: "2026-10-30T18:50:00Z" }] },
+  },
+]);
+if (mergedHands.handoffs.map((hand) => hand.from).join(",") !== "atlas,pixel") {
+  fail("handoff merge should name from the file and sort by bot");
+}
 
 const html = readFileSync(path.join(root, "index.html"), "utf8");
 for (const needle of [
@@ -123,11 +213,20 @@ const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
 const dupes = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (dupes.length) fail(`duplicate ids: ${dupes.join(", ")}`);
 
+if (/(?:src|href)\s*=\s*["']\//.test(html)) fail("index.html uses a root-absolute path");
 for (const file of readdirSync(path.join(root, "js"))) {
   if (!file.endsWith(".js")) continue;
   const text = readFileSync(path.join(root, "js", file), "utf8");
   if (text.includes("http://") || text.includes("https://")) fail(`${file} should not fetch a remote URL`);
+  if (/fetch\(\s*["']\//.test(text) || /from\s+["']\//.test(text)) {
+    fail(`${file} uses a root-absolute path`);
+  }
 }
+
+const pages = readFileSync(path.join(root, ".github/workflows/pages.yml"), "utf8");
+if (!pages.includes("actions/deploy-pages@")) fail("pages workflow should use actions/deploy-pages");
+if (!/branches:\s*\[main\]/.test(pages)) fail("pages workflow should run only on main");
+if (pages.includes("pull_request")) fail("pages workflow should not run on pull requests");
 
 const missed = await loadOfficeData(async () => {
   throw new Error("offline");

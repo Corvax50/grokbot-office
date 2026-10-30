@@ -56,7 +56,7 @@ export function mountUi({ banner, approvals, detail, roster, handoffs, onSelect 
   function renderHandoffs() {
     clear(handoffs);
     if (!model || model.handoffs.length === 0) {
-      handoffs.append(el("li", "empty", "No handoffs in the file."));
+      handoffs.append(el("li", "empty", "No handoffs in the last 24 hours."));
       return;
     }
     for (const hand of model.handoffs) {

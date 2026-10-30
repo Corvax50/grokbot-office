@@ -4,7 +4,13 @@
 
 export const STORED_STATES = ["working", "free", "blocked", "waiting"];
 export const ASLEEP_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
+export const HANDOFF_VISIBLE_MS = 24 * 60 * 60 * 1000;
 export const TASK_MAX = 80;
+export const LABEL_MAX = 40;
+const HIDDEN = "Not shown";
+
+const CURRENCY = /(?:[$€£¥]\s?\d|\d[\d,]*(?:\.\d+)?\s?(?:usd|eur|gbp|jpy|dollars?|euros?|pounds?|yen)\b|(?:usd|eur|gbp|jpy)\s?\d)/i;
+const EMAIL = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
@@ -19,23 +25,39 @@ export function isAsleep(updatedAtMs, nowMs) {
   return nowMs - updatedAtMs >= ASLEEP_AFTER_MS;
 }
 
+export function isRecentHandoff(createdAtMs, nowMs) {
+  if (createdAtMs == null) return false;
+  const age = nowMs - createdAtMs;
+  return age >= 0 && age <= HANDOFF_VISIBLE_MS;
+}
+
+export function publicTextIssues(value, max = TASK_MAX) {
+  const issues = [];
+  if (typeof value !== "string") return ["long text"];
+  if (/[\r\n]/.test(value) || value.trim().length > max) issues.push("long text");
+  if (CURRENCY.test(value)) issues.push("currency");
+  if (EMAIL.test(value)) issues.push("email");
+  return issues;
+}
+
 function problem(list, message) {
   list.push({ message });
 }
 
-function cleanText(value, max, label, problems, fallback) {
+function publishText(value, max, label, problems, fallback) {
   if (typeof value !== "string") {
     problem(problems, `${label} is missing.`);
     return fallback;
+  }
+  const issues = publicTextIssues(value, max);
+  if (issues.length) {
+    problem(problems, `${label} is not safe to publish (${issues.join(", ")}).`);
+    return HIDDEN;
   }
   const text = value.trim().replace(/\s+/g, " ");
   if (!text) {
     problem(problems, `${label} is empty.`);
     return fallback;
-  }
-  if (text.length > max) {
-    problem(problems, `${label} is longer than ${max} characters.`);
-    return text.slice(0, max);
   }
   return text;
 }
@@ -72,7 +94,7 @@ export function validateStatus(data, knownIds) {
       problem(problems, `${id} has an unknown state.`);
       return;
     }
-    const task = cleanText(entry.task, TASK_MAX, `${id} task`, problems, "No task reported");
+    const task = publishText(entry.task, TASK_MAX, `${id} task`, problems, "No task reported");
     let updatedAt = null;
     let updatedAtMs = null;
     if (entry.updatedAt == null) {
@@ -87,7 +109,7 @@ export function validateStatus(data, knownIds) {
     }
     let reason = "";
     if (entry.reason != null) {
-      reason = cleanText(entry.reason, TASK_MAX, `${id} reason`, problems, "");
+      reason = publishText(entry.reason, TASK_MAX, `${id} reason`, problems, "");
     } else if (entry.state === "blocked" || entry.state === "waiting") {
       problem(problems, `${id} is ${entry.state} without a reason.`);
     }
@@ -127,14 +149,22 @@ export function validateHandoffs(data, knownIds) {
       problem(problems, `${where} needs a label.`);
       return;
     }
-    const label = cleanText(entry.label, 40, `${where} label`, problems, "");
+    const label = publishText(entry.label, LABEL_MAX, `${where} label`, problems, "");
     if (!label) return;
-    handoffs.push({ from, to, label });
+    let createdAt = null;
+    let createdAtMs = null;
+    if (entry.createdAt == null) {
+      problem(problems, `${where} is missing createdAt.`);
+      return;
+    }
+    createdAtMs = parseTime(entry.createdAt);
+    if (createdAtMs == null) {
+      problem(problems, `${where} has an unreadable createdAt.`);
+      return;
+    }
+    createdAt = entry.createdAt;
+    handoffs.push({ from, to, label, createdAt, createdAtMs });
   });
-  if (handoffs.length > 12) {
-    problem(problems, "Only the first 12 handoffs are shown.");
-    handoffs.length = 12;
-  }
   return { problems, handoffs };
 }
 
@@ -183,11 +213,20 @@ export function buildModel(statusRaw, handoffRaw, knownIds, now) {
     };
   }
 
-  const handoffs = hands.handoffs.map((hand) => {
-    const sender = byId[hand.from];
-    const hold = !sender || sender.missing || sender.asleep;
-    return { ...hand, animate: !hold, hold: sender && sender.asleep ? "asleep" : sender && sender.missing ? "missing" : null };
-  });
+  const visible = hands.handoffs.filter((hand) => isRecentHandoff(hand.createdAtMs, now));
+  if (visible.length > 12) {
+    problem(problems, "Only the first 12 handoffs from the last 24 hours are shown.");
+    visible.length = 12;
+  }
+  const handoffs = visible.map((hand) => {
+      const sender = byId[hand.from];
+      const hold = !sender || sender.missing || sender.asleep;
+      return {
+        ...hand,
+        animate: !hold,
+        hold: sender && sender.asleep ? "asleep" : sender && sender.missing ? "missing" : null,
+      };
+    });
 
   const approvals = knownIds.filter((id) => byId[id].state === "waiting");
 
