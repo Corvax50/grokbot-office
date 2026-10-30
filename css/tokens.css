@@ -1,0 +1,19 @@
+:root {
+  --ink: #2a160f;
+  --ink-soft: #5c3a2c;
+  --cream: #fff6ea;
+  --cream-deep: #f3e0c8;
+  --paper: #fffaf3;
+  --wood: #6b3a28;
+  --wood-deep: #3e2218;
+  --sunset: #d15a3c;
+  --gold: #a56b12;
+  --blocked: #8e241c;
+  --waiting: #8a5a10;
+  --free: #2d6a34;
+  --asleep: #5c4d58;
+  --sky-top: #4a2044;
+  --shadow: 6px 6px 0 var(--ink);
+  --mono: ui-monospace, "DejaVu Sans Mono", "Liberation Mono", monospace;
+  --serif: "Palatino Linotype", Palatino, "Liberation Serif", Georgia, serif;
+}

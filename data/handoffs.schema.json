@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/grokbot-office/handoffs.schema.json",
+  "title": "Office handoffs",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["handoffs"],
+  "properties": {
+    "handoffs": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/handoff" }
+    }
+  },
+  "$defs": {
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "label"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "pattern": "^(dex|box|code|greed|atlas|pixel|medic|bot-jesus)$"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^(dex|box|code|greed|atlas|pixel|medic|bot-jesus)$"
+        },
+        "label": { "type": "string", "minLength": 1, "maxLength": 40 }
+      }
+    }
+  }
+}

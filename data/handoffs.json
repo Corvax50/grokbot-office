@@ -1,0 +1,14 @@
+{
+  "handoffs": [
+    {
+      "from": "pixel",
+      "to": "code",
+      "label": "Icon sheet"
+    },
+    {
+      "from": "atlas",
+      "to": "dex",
+      "label": "Shelf list"
+    }
+  ]
+}

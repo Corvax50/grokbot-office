@@ -1,0 +1,8 @@
+{
+  "name": "grokbot-office",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check.mjs"
+  }
+}
