@@ -1,0 +1,284 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--cream);
+  background:
+    radial-gradient(900px 420px at 50% -8%, #ffd7b0 0%, transparent 58%),
+    linear-gradient(#4a2044 0%, #c4543c 42%, #f2a56a 72%, #8a4030 100%);
+  font-family: var(--serif);
+}
+
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -40px;
+  background: var(--cream);
+  color: var(--ink);
+  padding: 8px 12px;
+  z-index: 5;
+}
+
+.skip:focus { top: 12px; }
+
+.wrap {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.kicker, .panel-kicker, .hint, .legend, .foot, .state, .nameplate, .carry, .row-button, .approval {
+  font-family: var(--mono);
+}
+
+.kicker {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  text-shadow: 0 3px 0 var(--ink);
+}
+
+.lede {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.banner {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background: var(--ink);
+  color: var(--cream);
+  border: 3px solid var(--cream);
+}
+
+.banner-title { margin: 0 0 6px; }
+
+.banner ul { margin: 0; padding-left: 1.2rem; }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 500 / 340;
+  background: #4a2044;
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.stage canvas,
+.plates {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stage canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.plates { pointer-events: none; }
+
+.nameplate, .carry {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+  border: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.nameplate[data-pose="blocked"] { background: var(--blocked); }
+.nameplate[data-pose="waiting"] { background: var(--waiting); }
+.nameplate[data-pose="free"] { background: var(--free); }
+.nameplate[data-pose="asleep"] { background: var(--asleep); }
+.nameplate[data-pose="missing"] { background: #4a403c; }
+
+.carry {
+  pointer-events: none;
+  background: var(--cream);
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.side, .panel {
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.side { display: flex; flex-direction: column; gap: 16px; }
+
+.panel { margin-top: 16px; overflow-x: auto; }
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.hint, .panel-kicker {
+  margin: -4px 0 10px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.legend li { display: flex; align-items: center; gap: 6px; }
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  display: inline-block;
+}
+
+.swatch-working { background: #e0a030; }
+.swatch-free { background: #3aaa62; }
+.swatch-blocked { background: #d24a3a; }
+.swatch-waiting { background: #f0c14a; }
+.swatch-asleep { background: #8a7a84; }
+
+#approvals, #handoffs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.approval {
+  width: 100%;
+  text-align: left;
+  background: var(--cream-deep);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.approval-name {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.approval-reason { color: var(--waiting); }
+
+.approval-note, .empty, .detail-note, .detail-when {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.detail-name { margin: 0; font-size: 28px; }
+.detail-role, .detail-task, .detail-reason, .detail-note, .detail-when { margin: 6px 0 0; }
+.detail-reason { color: var(--blocked); }
+
+.state { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.state-working { color: var(--wood); }
+.state-free { color: var(--free); }
+.state-blocked { color: var(--blocked); }
+.state-waiting { color: var(--waiting); }
+.state-asleep, .state-missing { color: var(--asleep); }
+.state-was { display: block; color: var(--ink-soft); letter-spacing: 0; text-transform: none; font-size: 12px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--cream-deep); vertical-align: top; }
+thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+tr.is-selected { background: #f8e3c4; }
+
+.row-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.foot { margin: 18px 0 0; font-size: 13px; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cream);
+  outline-offset: 2px;
+}
+
+.side :focus-visible, .panel :focus-visible, .nameplate:focus-visible {
+  outline-color: var(--gold);
+}
+
+@media (max-width: 860px) {
+  .top { flex-direction: column; align-items: flex-start; }
+  .layout { grid-template-columns: 1fr; }
+  .lede { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto; }
+}

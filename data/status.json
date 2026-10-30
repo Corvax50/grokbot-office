@@ -1,0 +1,54 @@
+{
+  "bots": [
+    {
+      "id": "dex",
+      "state": "working",
+      "task": "Sorting today's assignments",
+      "updatedAt": "2026-10-30T18:05:00Z"
+    },
+    {
+      "id": "box",
+      "state": "working",
+      "task": "Moving cards across the board",
+      "updatedAt": "2026-10-30T17:40:00Z"
+    },
+    {
+      "id": "code",
+      "state": "waiting",
+      "task": "Ready to send the patch",
+      "updatedAt": "2026-10-30T16:20:00Z",
+      "reason": "Needs a yes before the next step"
+    },
+    {
+      "id": "greed",
+      "state": "blocked",
+      "task": "Filing the week's folders",
+      "updatedAt": "2026-10-30T15:05:00Z",
+      "reason": "Source folder is missing"
+    },
+    {
+      "id": "atlas",
+      "state": "working",
+      "task": "Shelving the new maps",
+      "updatedAt": "2026-10-30T18:30:00Z"
+    },
+    {
+      "id": "pixel",
+      "state": "free",
+      "task": "Between sketches",
+      "updatedAt": "2026-10-30T14:10:00Z"
+    },
+    {
+      "id": "medic",
+      "state": "working",
+      "task": "Restocking the supply shelf",
+      "updatedAt": "2026-10-30T17:55:00Z"
+    },
+    {
+      "id": "bot-jesus",
+      "state": "working",
+      "task": "Aligning the bench clamp",
+      "updatedAt": "2026-10-26T11:00:00Z"
+    }
+  ]
+}

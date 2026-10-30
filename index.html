@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="City Hall, office v1: an isometric pixel-art floor for Corvax's AI assistants.">
+  <meta name="color-scheme" content="dark">
+  <title>City Hall — Office v1</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23c4543c' width='16' height='16'/%3E%3Crect fill='%23ffd7a8' x='4' y='4' width='8' height='8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/office.css">
+</head>
+<body>
+  <a class="skip" href="#roster-heading">Skip to roster</a>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <p class="kicker">Future city · Building 01</p>
+        <h1>City Hall</h1>
+      </div>
+      <p class="lede">Office v1. Eight assistants on one isometric floor, read from two JSON files when the page loads.</p>
+    </header>
+    <div id="banner" class="banner" role="status" hidden></div>
+    <main class="layout">
+      <section class="stage" aria-labelledby="floor-heading">
+        <h2 id="floor-heading" class="visually-hidden">Floor</h2>
+        <canvas id="floor" width="1000" height="680">A pixel-art office. The roster below lists every assistant.</canvas>
+        <div id="plates" class="plates"></div>
+        <div id="carry" class="carry" hidden></div>
+      </section>
+      <aside class="side">
+        <div>
+          <h2>Approvals</h2>
+          <p class="hint">Waiting for Corvax's yes.</p>
+          <ul class="legend">
+            <li><span class="swatch swatch-working"></span>Working</li>
+            <li><span class="swatch swatch-free"></span>Free</li>
+            <li><span class="swatch swatch-blocked"></span>Blocked</li>
+            <li><span class="swatch swatch-waiting"></span>Waiting</li>
+            <li><span class="swatch swatch-asleep"></span>Asleep</li>
+          </ul>
+          <ul id="approvals"></ul>
+        </div>
+        <div>
+          <h2 id="detail-heading">Selected</h2>
+          <div id="detail"></div>
+        </div>
+      </aside>
+    </main>
+    <section class="panel" aria-labelledby="roster-heading">
+      <h2 id="roster-heading">Roster</h2>
+      <p class="panel-kicker">Text fallback for the floor. Same data, no canvas required to read it.</p>
+      <div id="roster"></div>
+    </section>
+    <section class="panel" aria-labelledby="handoffs-heading">
+      <h2 id="handoffs-heading">Handoffs</h2>
+      <ul id="handoffs"></ul>
+    </section>
+    <p class="foot">Status is read once at load. Reload the page to pick up a new commit. Asleep means the last update is 3 or more days old. A waiting bot stays on the Approvals list anyway.</p>
+  </div>
+  <noscript>
+    <p class="wrap">This page needs JavaScript to read data/status.json and draw the floor.</p>
+  </noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
